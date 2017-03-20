@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from keras.models import Sequential
 from keras.layers import Dense
+from keras.callbacks import ModelCheckpoint
 from keras.wrappers.scikit_learn import KerasRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
@@ -11,7 +12,17 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 import time
 
+'''
+CREATES INPUT AND OUTPUT VECTORS, TRAINS A NEURAL NETWORK
+'''
+
 MASTER_MOVIE_FILE = 'carton_trope_data/analysis/results/master_movie_data.csv'
+TRAIN = 'training_data.csv'
+
+
+'''
+CUSTOMIZE THE INCLUSION LIST BY SPECIFYING COLUMNS
+'''
 
 pos_trope_inclusion_list = ['763','2460','846','1611','11742','2964','13286','5019','17117','4336',\
 	'4668','748','23318','19278','3137','7582','3372','51592','8703','13146','20669','21823','3461','7931','2455']
@@ -20,6 +31,11 @@ neg_trope_inclusion_list = ['261187','8364','3297','16351','3176','16953','15114
 	'308861','6142','4323','545','4511','8778','1617','10646','4702','22131','13542','577','9292','6313','1905']
 
 final_trope_inclusion_list = pos_trope_inclusion_list + neg_trope_inclusion_list + ["imdb_rating"]
+
+
+'''
+LOAD AND PREP THE TRAINING DATA
+'''
 
 def load_master_file(master_data_file):
 	master_df = pd.read_csv(master_data_file, error_bad_lines=False, encoding='latin-1',dtype={"imdb_rating": object})
@@ -30,8 +46,8 @@ def filter_master_dataframe(master_df,list_of_headings):
 	neural_network_df = master_df.filter(items=list_of_headings)
 	return neural_network_df
 
-def create_nn_dataframe():
-	master_df = load_master_file(MASTER_MOVIE_FILE)
+def create_nn_dataframe(data_file):
+	master_df = load_master_file(data_file)
 	filtered_master_df = filter_master_dataframe(master_df,final_trope_inclusion_list)
 	filtered_master_df = filtered_master_df[np.isfinite(filtered_master_df['imdb_rating'])]
 	return filtered_master_df
@@ -42,10 +58,13 @@ def pandas_to_csv(output_path,header,dataframe):
     except:
         print "Failure to create CSV file"
 
-# load dataset
+'''
+TRAIN THE NEURAL NETWORK
+'''
 def create_neural_network(input_data):
 
-	dataframe = pd.read_csv(input_data, delim_whitespace=False, header=0)
+	dataframe = pd.read_csv(input_data, delim_whitespace=False, header=0,index_col=0)
+	print dataframe
 	dataset = dataframe.values
 	# split into input (X) and output (Y) variables
 	X = dataset[:,0:50]
@@ -67,9 +86,12 @@ def create_neural_network(input_data):
 
 	    # Dense('size_of_output')
 		model.add(Dense(50, input_dim=50, init='normal', activation='relu'))
+		#model.add(Dense(6, init='normal', activation='relu'))
 		model.add(Dense(1, init='normal'))
+
 		# Compile model
 		model.compile(loss='mean_squared_error', optimizer='adam')
+
 		return model
 
 
@@ -77,7 +99,7 @@ def create_neural_network(input_data):
 	seed = 7
 	np.random.seed(seed)
 	# evaluate model with standardized dataset
-	estimator = KerasRegressor(build_fn=baseline_model, nb_epoch=100, batch_size=5, verbose=0)
+	estimator = KerasRegressor(build_fn=baseline_model, nb_epoch=100, batch_size=5, verbose=1)
 
 
 	kfold = KFold(n_splits=10, random_state=seed)
@@ -86,6 +108,6 @@ def create_neural_network(input_data):
 	print time.clock()
 
 if __name__ == "__main__":
-	#filtered_master_df = create_nn_dataframe()
-	#pandas_to_csv('nn_data.csv',final_trope_inclusion_list,filtered_master_df)
+	filtered_master_df = create_nn_dataframe(TRAIN)
+	pandas_to_csv('nn_data.csv',final_trope_inclusion_list,filtered_master_df)
 	create_neural_network('nn_data.csv')
