@@ -28,6 +28,7 @@ OUTPUT: A NEURAL NETWORK CSV FILE that will serve as training data in a supervis
 
 # LOCATE MASTER FILE
 MASTER_MOVIE_FILE = 'carton_trope_data/analysis/results/master_movie_data.csv'
+TRAIN = 'carton_trope_data/analysis/results/master_train.csv'
 
 # PREPARE COLUMN INCLUSION LIST
 pos_trope_inclusion_list = ['763','2460','846','1611','11742','2964','13286','5019','17117','4336',\
@@ -40,7 +41,7 @@ final_trope_inclusion_list = pos_trope_inclusion_list + neg_trope_inclusion_list
 
 # LOAD THE MASTER FILE INTO PANDAS DATAFRAME
 def load_master_file(master_data_file):
-	master_df = pd.read_csv(master_data_file, error_bad_lines=False, encoding='latin-1',dtype={"imdb_rating": object})
+	master_df = pd.read_csv(master_data_file, error_bad_lines=False, encoding='latin-1',dtype={"imdb_rating": object}, index_col=0)
 	master_df['imdb_rating'] = pd.to_numeric(master_df['imdb_rating'], errors='coerce')
 	return master_df
 
@@ -50,19 +51,23 @@ def filter_master_dataframe(master_df,column_inclusion_list):
 	return training_df
 
 # CREATES THE TRAINING DATAFRAME
-def create_training_dataframe():
-	master_df = load_master_file(MASTER_MOVIE_FILE)
-	filtered_master_df = filter_master_dataframe(master_df,final_trope_inclusion_list)
-	filtered_master_df = filtered_master_df[np.isfinite(filtered_master_df['imdb_rating'])]
+def create_training_dataframe(data_file, inclusion_list):
+	master_df = load_master_file(data_file)
+	filtered_master_df = filter_master_dataframe(master_df,inclusion_list)
+	for item in inclusion_list:
+		filtered_master_df = filtered_master_df[np.isfinite(filtered_master_df[item])]
 	return filtered_master_df
 
 # OUTPUTS THE TRAINING DATAFRAME TO A CSV FILE
 def pandas_to_csv(output_path,header,dataframe):
     try:
-        dataframe.to_csv(output_path, sep=',', encoding='latin-1',header=header)
+        dataframe.to_csv(output_path, sep=',', encoding='latin-1',header=header, index=False)
     except:
         print "Failure to create CSV file"
 
 if __name__ == "__main__":
-	training_df = create_training_dataframe()
-	pandas_to_csv('training_data.csv',final_trope_inclusion_list,filtered_master_df)
+	#Specify the columns to includr for second parameter
+	training_df = create_training_dataframe(TRAIN,[u'year',u'imdb_rating'])
+
+	#Specify output name, repeat inclusion list as header
+	pandas_to_csv('training_data_year.csv',[u'year',u'imdb_rating'],training_df)
