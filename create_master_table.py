@@ -55,6 +55,8 @@ def create_trope_dataframe():
     movie_tropes_df = pd.read_csv(MOVIE_TROPE_LISTS, error_bad_lines=False, encoding='latin-1')
     new_df = pd.merge(left=movie_df, right=movie_tropes_df, how='left', left_on='tvt_id', right_on='tvt_id')
     trope_df = new_df.filter(items=['imdb_id', 'trope_list'])
+    trope_df = trope_df.drop_duplicates(subset="imdb_id")
+    print trope_df
     try:
         trope_work_link_df = pd.read_csv(WORK_TROPE_LINKS_DATA, error_bad_lines=False, encoding='latin-1')
 
@@ -65,13 +67,13 @@ def create_trope_dataframe():
     try:
         for trope in trope_list:
             trope_df[trope] = 0
-        print trope_df
+        #print trope_df
     except:
         print "Error creating default trope columns:", sys.exc_info()[0]
         raise
     try:
         for index, row in trope_df.iterrows():
-            print row
+            #print row
             x = row[1]
             x = ast.literal_eval(x)
             relevant_tropes = [n for n in x]
@@ -81,7 +83,7 @@ def create_trope_dataframe():
                 trope_df.iloc[index, trope_df.columns.get_loc(trope)] = 1
     except:
         print "Error setting default trope values", sys.exc_info()[0]
-        raise
+        pass
     return trope_df.drop('trope_list', 1)
 
 def create_imdb_dataframe():
@@ -98,11 +100,18 @@ def combine_movie_trope_data():
     final_df = pd.merge(left=imdb_df, right=trope_df, how='left', left_on='imdb_id', right_on='imdb_id')
     return final_df
 
+def create_test_train_data(dataframe):
+    msk = np.random.rand(len(dataframe)) < 0.8
+    train = dataframe[msk]
+    test = dataframe[~msk]
+    return train, test
 
 if __name__ == "__main__":
     print "Program Starting at " + str(time.clock())
     new_df = combine_movie_trope_data()
-    new_df.to_csv('results/master_movie_data.csv', sep=',', encoding='latin-1')
+    train, test = create_test_train_data(new_df)
+    train.to_csv('results/master_train.csv', sep=',', encoding='latin-1')
+    test.to_csv('results/master_test.csv', sep=',', encoding='latin-1')
 
     # This
     print "Alien Trope Test: " + str(new_df.iloc[0][167])
