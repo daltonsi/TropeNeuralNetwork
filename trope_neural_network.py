@@ -18,6 +18,7 @@ CREATES INPUT AND OUTPUT VECTORS, TRAINS A NEURAL NETWORK
 
 MASTER_MOVIE_FILE = 'carton_trope_data/analysis/results/master_movie_data.csv'
 TRAIN = 'training_data.csv'
+TRAIN_runtime = 'training_data_runtime.csv'
 
 
 '''
@@ -63,13 +64,13 @@ TRAIN THE NEURAL NETWORK
 '''
 def create_neural_network(input_data):
 
-	dataframe = pd.read_csv(input_data, delim_whitespace=False, header=0,index_col=0)
-	print dataframe
+	dataframe = pd.read_csv(input_data, delim_whitespace=False, header=0,index_col=None)
 	dataset = dataframe.values
 	# split into input (X) and output (Y) variables
-	X = dataset[:,0:50]
-	Y = dataset[:,50]
-	print Y
+	input_dimension = len(dataset[0])-1
+	X = dataset[:,0:input_dimension]
+	Y = dataset[:,input_dimension]
+
 	print time.clock()
 
 	# define base mode
@@ -85,7 +86,7 @@ def create_neural_network(input_data):
 		model = Sequential()
 
 	    # Dense('size_of_output')
-		model.add(Dense(50, input_dim=50, init='normal', activation='relu'))
+		model.add(Dense(input_dimension, input_dim=input_dimension, init='normal', activation='relu'))
 		#model.add(Dense(6, init='normal', activation='relu'))
 		model.add(Dense(1, init='normal'))
 
@@ -108,6 +109,16 @@ def create_neural_network(input_data):
 	print time.clock()
 
 if __name__ == "__main__":
-	filtered_master_df = create_nn_dataframe(TRAIN)
-	pandas_to_csv('nn_data.csv',final_trope_inclusion_list,filtered_master_df)
-	create_neural_network('nn_data.csv')
+	#Specify Training File
+	#filtered_master_df = create_nn_dataframe(TRAIN_runtime)
+
+	#Specify Output File
+	#pandas_to_csv('nn_data_runtime.csv',[u'runtime',u'imdb_rating'],filtered_master_df)
+	create_neural_network('training_data_year.csv')
+
+
+'''Using TensorFlow backend.
+[ 8.5  8.   6.8 ...,  4.4  4.9  7.2]
+1.418577
+Results: 1.40 (0.16) MSE
+3242.379385'''
