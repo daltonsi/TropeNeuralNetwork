@@ -78,7 +78,7 @@ def create_neural_network(training, test, trainNewModel = False, modelFilename =
      results_df = pd.concat([predictions, TEST_Y], axis=1)
      print results_df
      results_df.columns = ['prediction', 'label']
-     results_df['diff'] = abs(results_df['prediction'] - results_df['label'])
+     results_df['diff'] = abs(results_df['prediction'] - results_df['label'])**2
      print results_df
      print results_df["diff"].mean()
 
