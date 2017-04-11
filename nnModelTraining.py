@@ -82,7 +82,7 @@ def create_neural_network(training, test, trainNewModel = False, modelFilename =
      print results_df
      print results_df["diff"].mean()
 
-	# fix random seed for reproducibility
+	# OPTIONAL: Evaluate using K-Folds
 	# evaluate model with standardized dataset
      #estimator = KerasRegressor(build_fn=baseline_model, nb_epoch=100, batch_size=5, verbose=1)
 
