@@ -81,7 +81,6 @@ def generateTable(tropeCounter, movieIDs, tropeTrackerDict, count_threshold=25):
     # Use trope tracker information to fill table
     counter = 0
     for index, row in df_.iterrows():
-        #print tropeTrackerDict[index]
         for trope in tropeTrackerDict[index]:
             try:
                 if trope in columns:
@@ -117,6 +116,8 @@ def create_imdb_dataframe():
     imdb_df = imdb_df.filter(items=[u'actors', u'awards', u'country', u'director',u'genre', u'imdb_id', u'imdb_rating', u'imdb_votes', u'language', u'metascore', u'plot', u'rated', u'released', u'runtime', u'title', u'type', u'writer', u'year'])
     imdb_df = imdb_df.dropna(how='all')
     imdb_df = imdb_df.loc[imdb_df['type'].isin(['movie'])]
+    #imdb_df[imdb_df['imdb_rating'].apply(lambda x: str(x).isdigit())]
+
     imdb_df['runtime'] = imdb_df['runtime'].str.replace(' min','').replace('N/A',np.NaN)
     return imdb_df
 
@@ -134,6 +135,12 @@ def create_train_test(raw_dataframe):
     train_df, test_df = train_test_split(raw_dataframe, test_size = 0.2)
     return train_df, test_df
 
+def filter_master_table(dataframe):
+    '''Removes fields not to be used in the training and test data'''
+    for field in ['actors','awards','country','director','genre','imdb_votes','language','metascore','plot','rated','released','runtime','title','writer','year']:
+        del dataframe[field]
+    return dataframe
+
 if __name__ == "__main__":
 
     tropeCounter, movieIDs, tropeTrackerDict = calcTableFields(WORK_TROPE_LINKS_DATA)
@@ -144,7 +151,12 @@ if __name__ == "__main__":
     trope_df = fix_imdb_data(trope_df)
     imdb_df = create_imdb_dataframe()
     master_df = combine_movie_trope_data(trope_df, imdb_df)
+    master_df = filter_master_table(master_df)
+    print len(master_df)
+    master_df[['imdb_rating']] = master_df[['imdb_rating']].apply(pd.to_numeric, errors='coerce')
+    master_df = master_df[np.isfinite(master_df['imdb_rating'])]
+    print len(master_df)
 
     train, test = create_train_test(master_df)
-    train.to_csv('results/training.csv', sep=',', encoding='latin-1', index=False)
-    test.to_csv('results/test.csv', sep=',', encoding='latin-1', index=False)
+    train.to_csv('results/training.csv', sep=',', encoding='latin-1', index=False, header=False)
+    test.to_csv('results/test.csv', sep=',', encoding='latin-1', index=False, header=False)
