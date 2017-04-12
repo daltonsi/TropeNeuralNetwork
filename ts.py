@@ -106,5 +106,5 @@ for trope in lot_tropes:
 	coef = regr.coef_[0]
 	# Print statement is optional
 	print 'Trope ID: %s | Trope Name: %s | Linear Regression Coefficient: %s' % (trope_id,trope_name,coef)
-	writer.writerow({'trope_id':trope_id,'trope_name':trope_name.encode('ascii','ignore'),'reg_coef_train':coef})
+	writer.writerow({'trope_id':trope_id,'trope_name':trope_name.encode('ascii','ignore'),'reg_coef':coef})
 outfile.close()
