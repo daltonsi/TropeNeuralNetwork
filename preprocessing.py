@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
 import pandas as pd
 import numpy as np
 import csv, time, sys, ast, operator
 from sklearn.model_selection import train_test_split
 from collections import Counter
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 '''
 CREATE MASTER TABLE
@@ -27,11 +31,22 @@ CAT_LINKS_DATA = 'tvt_category_category_link.csv'
 WIKI_WORK_LINKS_DATA = 'wiki_tvt_work_link.csv'
 WIKI_WORK_DATA = 'wiki_work.csv'
 
-
 # DALTON DATA FILES
 IMDB_ID_DATA = 'dd_data/imdb_id_master.csv'
 MOVIE_TROPE_LISTS = 'dd_data/movie_tropes.csv'
 OMDB_DATA = 'imdb_data.json'
+
+#TIME SERIES
+TS_REGRESSION_COEFF =  'timeseries/tvt_timeseries_all.csv'
+
+
+def loadTS_RegCoeff_toDict(TS_REGRESSION_COEFF):
+    '''Loads the regression coeffients data into a dictionary'''
+    with open(TS_REGRESSION_COEFF, mode='r') as infile:
+        reader = csv.reader(infile)
+        tsRegCoeff_dict = dict((rows[0],rows[2]) for rows in reader)
+    return tsRegCoeff_dict
+
 
 def calcTableFields(work_trope_links, tropeID_column='trope_tvt_id', movieID_column='work_tvt_id', count_threshold=25):
     '''Compiles MovieIDs and TropeIDs for data table rows and columns respectively'''
@@ -55,7 +70,6 @@ def calcTableFields(work_trope_links, tropeID_column='trope_tvt_id', movieID_col
     # Collect tropes per movie
     tropeTrackerDict = {k: [] for k in movieIDs}
 
-
     # Filter tropes by count_threshold frequency or more
     tropeCounter = {k:v for k,v in tropeCounter.iteritems() if v > count_threshold}
 
@@ -63,25 +77,35 @@ def calcTableFields(work_trope_links, tropeID_column='trope_tvt_id', movieID_col
         tropeTrackerDict[row[0]].append(row[1])
     tropeCounter = sorted(tropeCounter.items(), key=operator.itemgetter(1), reverse=True)
 
+    tsRegCoeff_dict = loadTS_RegCoeff_toDict(TS_REGRESSION_COEFF)
     print "Table fields complete!" + "\n"
-    return tropeCounter, movieIDs, tropeTrackerDict
+    return tropeCounter, movieIDs, tropeTrackerDict, tsRegCoeff_dict
 
 
-def generateTable(tropeCounter, movieIDs, tropeTrackerDict, count_threshold=25):
+def generateTable(tropeCounter, movieIDs, tropeTrackerDict, tsRegCoeff_dict, count_threshold=25):
     '''Populates a pandas dataframe with trope occurances(column) for each movie(row)'''
     print "Generating the table..."
     #calculate table dimensions
     columns = [x[0] for x in tropeCounter]
     index = movieIDs
 
+    #add column for time series regression coefficents
+    columns.append('ts_reg_coeff')
+
     # Create and fill blank dataframe
     df_ = pd.DataFrame(index=index, columns=columns)
     df_ = df_.fillna(0)
-
+    df_[['ts_reg_coeff']] = df_[['ts_reg_coeff']].astype(float)
     # Use trope tracker information to fill table
     counter = 0
     for index, row in df_.iterrows():
+
+        #count number of tropes with particular movie
+        num_tropes = len(tropeTrackerDict[index])
+        regCoeffVal = 0
+
         for trope in tropeTrackerDict[index]:
+
             try:
                 if trope in columns:
                     df_.set_value(index,trope,1)
@@ -89,6 +113,16 @@ def generateTable(tropeCounter, movieIDs, tropeTrackerDict, count_threshold=25):
                     pass
             except:
                 raise
+
+            try:
+                regCoeffVal = regCoeffVal + float(tsRegCoeff_dict[str(trope)])
+
+            except:
+                raise
+
+        regCoeffVal = regCoeffVal / num_tropes
+        df_.set_value(index,'ts_reg_coeff',regCoeffVal)
+
         counter +=1
         print str(counter) + " of " + str(len(df_)) + " Keys Complete."
 
@@ -119,6 +153,13 @@ def create_imdb_dataframe():
     #imdb_df[imdb_df['imdb_rating'].apply(lambda x: str(x).isdigit())]
 
     imdb_df['runtime'] = imdb_df['runtime'].str.replace(' min','').replace('N/A',np.NaN)
+    imdb_df[['runtime']] = imdb_df[['runtime']].apply(pd.to_numeric, errors='coerce')
+    imdb_df = imdb_df[np.isfinite(imdb_df['runtime'])]
+    imdb_df[['year']] = imdb_df[['year']].apply(pd.to_numeric, errors='coerce')
+    imdb_df = imdb_df[np.isfinite(imdb_df['year'])]
+
+    cols_to_norm = ['runtime','year']
+    imdb_df[cols_to_norm] = imdb_df[cols_to_norm].apply(lambda x: (x - x.mean()) / (x.max() - x.min()))
     return imdb_df
 
 def combine_movie_trope_data(trope_df,imdb_df):
@@ -137,14 +178,13 @@ def create_train_test(raw_dataframe):
 
 def filter_master_table(dataframe):
     '''Removes fields not to be used in the training and test data'''
-    for field in ['actors','awards','country','director','genre','imdb_votes','language','metascore','plot','rated','released','runtime','title','writer','year']:
+    for field in ['actors','awards','country','director','genre','imdb_votes','language','metascore','plot','rated','released','title','writer']:
         del dataframe[field]
     return dataframe
 
-if __name__ == "__main__":
-
-    tropeCounter, movieIDs, tropeTrackerDict = calcTableFields(WORK_TROPE_LINKS_DATA)
-    trope_df_ = generateTable(tropeCounter, movieIDs, tropeTrackerDict)
+def create_master_table():
+    tropeCounter, movieIDs, tropeTrackerDict, tsRegCoeff_dict = calcTableFields(WORK_TROPE_LINKS_DATA)
+    trope_df_ = generateTable(tropeCounter, movieIDs, tropeTrackerDict, tsRegCoeff_dict)
     movie_df = pd.read_csv(IMDB_ID_DATA, error_bad_lines=False, encoding='latin-1')
     movie_df = movie_df.filter(items=['imdb_id', 'tvt_id'])
     trope_df = pd.merge(left=movie_df, right=trope_df_, how='left', left_on='tvt_id', right_on='tvt_id')
@@ -152,11 +192,32 @@ if __name__ == "__main__":
     imdb_df = create_imdb_dataframe()
     master_df = combine_movie_trope_data(trope_df, imdb_df)
     master_df = filter_master_table(master_df)
-    print len(master_df)
     master_df[['imdb_rating']] = master_df[['imdb_rating']].apply(pd.to_numeric, errors='coerce')
     master_df = master_df[np.isfinite(master_df['imdb_rating'])]
-    print len(master_df)
+    return master_df
 
+'''
+OPTIONAL VISUALIZATION FUNCTIONS
+'''
+def trope_frequency_histogram():
+    dataframe = create_imdb_dataframe()
+    dataframe.imdb_rating.value_counts().plot(kind='bar')
+    plt.xlabel('Imdb_rating')
+    plt.ylabel('Frequency')
+    plt.title('IMDB Rating Frequency')
+    plt.tick_params(
+    axis='x',          # changes apply to the x-axis
+    which='both',      # both major and minor ticks are affected
+    bottom='off',      # ticks along the bottom edge are off
+    top='off',         # ticks along the top edge are off
+    labelbottom='on')
+    plt.savefig("visualizations/imdb_rating_frequency.png")
+
+    return 0
+
+if __name__ == "__main__":
+    #trope_frequency_histogram()
+    master_df = create_master_table()
     train, test = create_train_test(master_df)
     train.to_csv('results/training.csv', sep=',', encoding='latin-1', index=False, header=False)
     test.to_csv('results/test.csv', sep=',', encoding='latin-1', index=False, header=False)
