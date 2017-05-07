@@ -188,13 +188,28 @@ To build the neural network, we used the Keras Deep Learning Library(https://ker
 
 Not only does a Neural Network offer the potential to consider movie features from multiple subdomains(narrative tropes, IMDB movie information and more), it also allows for the possibility to capture deeper interactions of two or more features.  
 
+All neural network models were trained using a variety of features to predict a film's IMDB rating. Performance was measured using Mean Squared Error between the IMDB rating predictions with the actual IMDB rating. A baseline modal was built using no hidden layers only using the year of the movie as the sole feature. From there, all features were added to test and improve results. In addition to feature inclusion experimentation, the neural network was tuned by changing parameters(i.e. number of hidden layers, size of hidden layers, batch sizes, number of epochs) in order to optimize performance.  
+
 
 
 A notable feature we are using to develop our neural network is time series, that is, how much usage of a trope has changed over time. In particular, we are focusing on the ratio between the number of movies a trope is used in vs. the total number of movies released for each year in order to normalize the relationship. We are achieving this using visualizations for commonly used tropes, as well as calculating linear regression coefficients for a larger number of tropes.
 
 
+
 ## Results
 
+### Baseline Model
+- Mean Squared Error = 1.660
+- IMDB Movie Year only
+- 1 Hidden Layer
+- 100 Epochs
+- Batch Size = 5
+
+### Best Model
+- Mean Squared Error = 1.022
+- 3 Hidden Layers (2150, 1000 and 500 nodes respectively)
+- 120 Epochs
+- Batch Size = 10
 
 
 ## Conclusions
@@ -203,10 +218,13 @@ A notable feature we are using to develop our neural network is time series, tha
 
 
 ### Using Wiki Community Data
+While TVtropes shares community customs for writing and maintaining the catalogue of tropes(http://tvtropes.org/pmwiki/pmwiki.php/Administrivia/TVTropesCustoms), there are no benchmarks for completion. Tasks related to naming tropes and maintaining an accurate and complete tagging of movies are largely dependent on the behavior and interest of the wiki community. As a result, popular movies would receive more interest/better tagging. Unpopular projects would have less favorable attention. Thus, there are inherent biases in the wiki community and the data they generate that can be acknowledged, even if those biases are not fully understood for this project. 
 
 ### Capturing Better Trope Features 
+For many tropes, the wiki community groups subsets of tropes into categories and hierarchies. Our methodology treats as trope as a distinct unit, which is not the case. Our filtering techniques removed tropes with lower frequency, yet they may in fact be a specialized trope in a more generic category. Further work could explore the organization of tropes to capture trope information in a more meaningful manner.  
 
 ### Multi-Modal Comparison
+Neural Networks offer one of many models for the prediction task of this work. Further work could compare the performance of the neural network against other machine learning models.  Doing so would further elucidate the advantages and disadvantages of using neural networks to capture and use trope information.
 
 ## Appendix
 
