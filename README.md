@@ -188,7 +188,7 @@ To build the neural network, we used the Keras Deep Learning Library(https://ker
 
 Not only does a Neural Network offer the potential to consider movie features from multiple subdomains(narrative tropes, IMDB movie information and more), it also allows for the possibility to capture deeper interactions of two or more features.  
 
-All neural network models were trained using a variety of features to predict a film's IMDB rating. Performance was measured using Mean Squared Error between the IMDB rating predictions with the actual IMDB rating. A baseline modal was built using no hidden layers only using the year of the movie as the sole feature. From there, all features were added to test and improve results. In addition to feature inclusion experimentation, the neural network was tuned by changing parameters(i.e. number of hidden layers, size of hidden layers, batch sizes, number of epochs) in order to optimize performance.  
+All neural network models were trained using a variety of features to predict a film's IMDB rating. Performance was measured using Mean Squared Error between the IMDB rating predictions with the actual IMDB rating. A baseline model was built using no hidden layers only using the year of the movie as the sole feature. From there, all features were added to test and improve results. In addition to feature inclusion experimentation, the neural network was tuned by changing parameters(i.e. number of hidden layers, size of hidden layers, batch sizes, number of epochs) in order to optimize performance.  
 
 
 
@@ -223,7 +223,7 @@ While TVtropes shares community customs for writing and maintaining the catalogu
 ### Capturing Better Trope Features 
 For many tropes, the wiki community groups subsets of tropes into categories and hierarchies. Our methodology treats as trope as a distinct unit, which is not the case. Our filtering techniques removed tropes with lower frequency, yet they may in fact be a specialized trope in a more generic category. Further work could explore the organization of tropes to capture trope information in a more meaningful manner.  
 
-### Multi-Modal Comparison
+### Multi-Model Comparison
 Neural Networks offer one of many models for the prediction task of this work. Further work could compare the performance of the neural network against other machine learning models.  Doing so would further elucidate the advantages and disadvantages of using neural networks to capture and use trope information.
 
 ## Appendix
