@@ -1,5 +1,7 @@
 # Code borrowed from http://machinelearningmastery.com/regression-tutorial-keras-deep-learning-library-python/
 
+# Code borrowed from http://machinelearningmastery.com/regression-tutorial-keras-deep-learning-library-python/
+
 import numpy as np
 import pandas as pd
 from keras.models import Sequential
@@ -58,17 +60,25 @@ def create_neural_network(training, test, trainNewModel = False, modelFilename =
 
 	    # Dense('size_of_output')
           model.add(Dense(input_dimension, input_dim=input_dimension, init='normal', activation='relu'))
-		#model.add(Dense(6, init='normal', activation='relu'))
+          model.add(Dense(2150, init='normal', activation='relu'))
+          model.add(Dense(1000, init='normal', activation='relu'))
+          model.add(Dense(500, init='normal', activation='relu'))
+          model.add(Dense(20, init='normal', activation='relu'))
           model.add(Dense(1, init='normal'))
           print
 		# Compile model
           model.compile(loss='mean_squared_error', optimizer='adam')
           if trainNewModel == True:
-              history = model.fit(X,Y,nb_epoch=100,batch_size=50)
-              #model.save_weights("model_v1.h5")
-          model.load_weights("model_v1.h5")
+              history = model.fit(X,Y,nb_epoch=120,batch_size=10)
+              model.save_weights("model_year_runtime_v2.h5")
+          #model.load_weights("model_v1.h5")
           predictions = model.predict(np.array(TEST_X))
-          predictions = pd.Series([float(x[0]) for x in predictions])
+
+          predictions = [float(x[0]) for x in predictions]
+          for prediction in predictions:
+              if prediction > 10:
+                  prediction = 10.0
+          predictions = pd.Series(predictions)
           #results_to_csv('results_1.csv', predictions)
           return model, predictions
 
@@ -82,7 +92,7 @@ def create_neural_network(training, test, trainNewModel = False, modelFilename =
      print results_df
      print results_df["diff"].mean()
 
-	# fix random seed for reproducibility
+	# OPTIONAL: Evaluate using K-Folds
 	# evaluate model with standardized dataset
      #estimator = KerasRegressor(build_fn=baseline_model, nb_epoch=100, batch_size=5, verbose=1)
 
@@ -94,6 +104,6 @@ def create_neural_network(training, test, trainNewModel = False, modelFilename =
 
 if __name__ == "__main__":
     try:
-        create_neural_network(TRAIN, TEST)
+        create_neural_network(TRAIN, TEST, trainNewModel = True)
     except:
         raise
